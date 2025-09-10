@@ -5,31 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Cybersecurity Career Launch Plan</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chosen Palette: Serene Stone -->
-    <!-- Application Structure Plan: The application is designed as a single-page, vertical timeline dashboard. This structure was chosen because the source report (career_plan.md) is inherently a time-based plan. The user flow is simple: scroll down to see phases in chronological order. The primary interaction is checking off tasks in each phase. This immediately updates a master progress bar at the top, providing instant, motivating feedback. Collapsible sections could have hidden progress, but this open-dashboard approach makes the entire plan feel transparent and manageable. Key life events are visually distinct to acknowledge their importance and reinforce that breaks are part of the plan. This design prioritizes clarity, motivation, and ease of use. -->
-    <!-- Visualization & Content Choices: 
-        - Overall Progress: Report Info -> Total tasks. Goal -> Inform/Motivate. Viz/Method -> HTML/CSS Progress Bar. Interaction -> Updates on task completion. Justification -> A progress bar provides the most intuitive and immediate feedback on overall completion, which is highly motivating for a long-term plan.
-        - Plan Structure: Report Info -> Phases 1, 2, 3. Goal -> Organize. Viz/Method -> Themed cards/sections in a vertical flex layout. Interaction -> None (always visible). Justification -> An open layout (vs. accordions) lets the user see the entire scope of their journey at a glance, reducing clicks and making the plan feel more connected.
-        - Tasks: Report Info -> Checklist items. Goal -> Track progress. Viz/Method -> Interactive HTML checkboxes with labels. Interaction -> User clicks to check/uncheck, state is saved to localStorage. Justification -> This is the core interactive element. Saving progress is essential for a multi-session tool.
-        - Life Events: Report Info -> Graduation, Move, Wedding. Goal -> Contextualize/Plan. Viz/Method -> Specially styled info boxes. Interaction -> None. Justification -> Visually separating these from tasks validates their importance and makes the plan feel more realistic and humane.
-        - Motivational Text: Report Info -> Biblical verses. Goal -> Inspire. Viz/Method -> Italicized blockquotes. Interaction -> None. Justification -> A simple, respectful presentation that separates inspirational content from actionable tasks.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         .task-checkbox:checked + label .task-text {
             text-decoration: line-through;
-            color: #9ca3af; /* gray-400 */
+            color: #9ca3af;
         }
         .task-checkbox:checked + label .checkmark {
-            background-color: #2563eb; /* blue-600 */
-            border-color: #2563eb; /* blue-600 */
+            background-color: #16a34a;
+            border-color: #16a34a;
         }
         .task-checkbox:checked + label .checkmark:after {
             display: block;
+        }
+        .task-checkbox:checked + label {
+            animation: task-complete-pop 0.3s ease-out;
+        }
+        @keyframes task-complete-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
         }
         .checkmark {
             transition: all 0.2s ease-in-out;
@@ -46,42 +45,503 @@
             border-width: 0 2px 2px 0;
             transform: rotate(45deg);
         }
+        .current-phase {
+            border-color: #2563eb;
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.15), 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+            transform: scale(1.01);
+        }
+        .phase-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .overdue-task {
+            background-color: #fef2f2;
+            border-left: 3px solid #ef4444;
+        }
+        .completed-phase {
+            opacity: 0.8;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+        .dark {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #e2e8f0;
+        }
+        .dark .bg-white {
+            background-color: #334155 !important;
+        }
+        .dark .text-stone-800 {
+            color: #e2e8f0 !important;
+        }
+        .dark .text-stone-600 {
+            color: #94a3b8 !important;
+        }
+        .dark .border-stone-200 {
+            border-color: #475569 !important;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body class="bg-stone-50 text-stone-800">
+<body class="bg-gradient-to-br from-stone-50 to-stone-100 text-stone-800 transition-colors duration-300">
 
     <div id="app" class="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
         
         <header class="text-center mb-8 md:mb-12">
-            <h1 class="text-3xl sm:text-4xl font-bold text-stone-900">My Cybersecurity Career Launch Plan</h1>
+            <div class="flex justify-between items-center mb-4">
+                <div></div>
+                <h1 class="text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight">My Cybersecurity Career Launch Plan</h1>
+                <button id="dark-mode-toggle" class="p-2 rounded-lg bg-stone-200 hover:bg-stone-300 transition-colors" aria-label="Toggle dark mode">
+                    <span id="dark-mode-icon">🌙</span>
+                </button>
+            </div>
             <p class="mt-2 text-stone-600">Your interactive guide to building skills and launching your career.</p>
-            <div class="mt-4 inline-block bg-stone-200 text-stone-700 text-sm font-medium px-4 py-2 rounded-full">
+            <div class="mt-4 inline-block bg-white border border-stone-200 shadow-sm text-stone-700 text-sm font-medium px-4 py-2 rounded-full">
                 <span id="current-date"></span>
             </div>
         </header>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-8 sticky top-4 z-10 border border-stone-200">
+        <div class="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-6 mb-8 sticky top-4 z-10 border border-stone-200">
             <div class="flex justify-between items-center mb-2">
-                <h2 class="font-bold text-lg">Overall Progress</h2>
-                <span id="progress-text" class="font-bold text-blue-600">0%</span>
+                <h2 class="font-bold text-lg">🚀 Overall Progress</h2>
+                <div class="flex items-center gap-4">
+                    <span id="progress-text" class="font-bold text-blue-600">0%</span>
+                    <button id="export-btn" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors">
+                        📊 Export
+                    </button>
+                </div>
             </div>
-            <div class="w-full bg-stone-200 rounded-full h-4">
-                <div id="progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+            <div class="w-full bg-stone-200 rounded-full h-4 overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-cyan-400 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="mt-2 text-xs text-stone-600">
+                <span id="completed-tasks">0</span> of <span id="total-tasks">0</span> tasks completed
             </div>
         </div>
 
-        <main id="plan-container" class="space-y-8">
+        <main id="plan-container" class="space-y-8" role="main">
             <!-- Phases will be rendered here by JavaScript -->
         </main>
+
+        <!-- Keyboard shortcuts help -->
+        <div id="shortcuts-help" class="fixed bottom-4 right-4 bg-black/80 text-white text-xs p-3 rounded-lg hidden">
+            <div class="font-bold mb-2">Keyboard Shortcuts:</div>
+            <div>? - Toggle this help</div>
+            <div>d - Toggle dark mode</div>
+            <div>e - Export progress</div>
+            <div>Esc - Close help</div>
+        </div>
 
     </div>
 
     <script>
+        // Configuration
+        const CONFIG = {
+            STORAGE_KEY: 'cyberPlanState',
+            ANIMATION_DURATION: 300,
+            DATE_FORMAT: 'en-US',
+            DEBOUNCE_DELAY: 300
+        };
+
+        // Utility functions
+        const Utils = {
+            debounce: (func, wait) => {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            },
+
+            isDateInRange: (dateStr, startStr, endStr) => {
+                try {
+                    const date = new Date(dateStr + 'T00:00:00');
+                    const start = new Date(startStr + 'T00:00:00');
+                    const end = new Date(endStr + 'T23:59:59');
+                    return date >= start && date <= end;
+                } catch (error) {
+                    console.warn('Invalid date format:', error);
+                    return false;
+                }
+            },
+
+            parseTaskDueDate: (dueDateStr) => {
+                try {
+                    // Extract date from strings like "By Wednesday, Sept 10th"
+                    const match = dueDateStr.match(/(\w+),?\s+(\w+)\s+(\d+)/);
+                    if (match) {
+                        const [, , month, day] = match;
+                        const year = new Date().getFullYear();
+                        const monthMap = {
+                            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+                            'Jul': 6, 'Aug': 7, 'Sep': 8, 'Sept': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+                        };
+                        return new Date(year, monthMap[month] || 8, parseInt(day));
+                    }
+                } catch (error) {
+                    console.warn('Could not parse due date:', dueDateStr, error);
+                }
+                return null;
+            },
+
+            isTaskOverdue: (dueDateStr) => {
+                const dueDate = Utils.parseTaskDueDate(dueDateStr);
+                if (!dueDate) return false;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return today > dueDate;
+            }
+        };
+
+        // Data Management
+        const DataManager = {
+            state: {
+                completedTasks: [],
+                darkMode: false
+            },
+
+            save: Utils.debounce(() => {
+                try {
+                    const stateToSave = {
+                        completedTasks: DataManager.state.completedTasks,
+                        darkMode: DataManager.state.darkMode,
+                        lastSaved: new Date().toISOString()
+                    };
+                    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(stateToSave));
+                } catch (error) {
+                    console.error('Failed to save state:', error);
+                }
+            }, CONFIG.DEBOUNCE_DELAY),
+
+            load: () => {
+                try {
+                    const savedState = localStorage.getItem(CONFIG.STORAGE_KEY);
+                    if (savedState) {
+                        const parsedState = JSON.parse(savedState);
+                        if (parsedState && typeof parsedState === 'object') {
+                            DataManager.state.completedTasks = Array.isArray(parsedState.completedTasks) 
+                                ? parsedState.completedTasks 
+                                : [];
+                            DataManager.state.darkMode = Boolean(parsedState.darkMode);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Failed to load saved state, using defaults:', error);
+                    DataManager.state = { completedTasks: [], darkMode: false };
+                }
+            },
+
+            exportProgress: () => {
+                const totalTasks = TaskManager.getTotalTasks();
+                const completedCount = DataManager.state.completedTasks.length;
+                const percentage = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+
+                const exportData = {
+                    exportDate: new Date().toISOString(),
+                    progress: {
+                        totalTasks,
+                        completedTasks: completedCount,
+                        percentage
+                    },
+                    completedTaskIds: DataManager.state.completedTasks,
+                    phaseProgress: planData.filter(p => p.tasks).map(phase => ({
+                        phase: phase.phase,
+                        title: phase.title,
+                        totalTasks: phase.tasks.length,
+                        completedTasks: phase.tasks.filter(task => 
+                            DataManager.state.completedTasks.includes(task.id)
+                        ).length
+                    }))
+                };
+
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], 
+                    { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cybersecurity-plan-progress-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        };
+
+        // Task Management
+        const TaskManager = {
+            toggle: (taskId) => {
+                const { completedTasks } = DataManager.state;
+                if (completedTasks.includes(taskId)) {
+                    DataManager.state.completedTasks = completedTasks.filter(id => id !== taskId);
+                } else {
+                    DataManager.state.completedTasks.push(taskId);
+                }
+                DataManager.save();
+                UIRenderer.updateProgress();
+            },
+
+            getTotalTasks: () => {
+                return planData.reduce((acc, phase) => acc + (phase.tasks ? phase.tasks.length : 0), 0);
+            },
+
+            isPhaseComplete: (phase) => {
+                if (!phase.tasks || phase.tasks.length === 0) return false;
+                return phase.tasks.every(task => DataManager.state.completedTasks.includes(task.id));
+            },
+
+            getPhaseProgress: (phase) => {
+                if (!phase.tasks || phase.tasks.length === 0) return { completed: 0, total: 0, percentage: 0 };
+                const completed = phase.tasks.filter(task => 
+                    DataManager.state.completedTasks.includes(task.id)
+                ).length;
+                return {
+                    completed,
+                    total: phase.tasks.length,
+                    percentage: Math.round((completed / phase.tasks.length) * 100)
+                };
+            }
+        };
+
+        // UI Rendering
+        const UIRenderer = {
+            updateProgress: () => {
+                const totalTasks = TaskManager.getTotalTasks();
+                const completedCount = DataManager.state.completedTasks.length;
+                const percentage = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                const completedTasksSpan = document.getElementById('completed-tasks');
+                const totalTasksSpan = document.getElementById('total-tasks');
+
+                if (progressBar && progressText) {
+                    progressBar.style.width = `${percentage}%`;
+                    progressText.textContent = `${percentage}%`;
+                }
+                if (completedTasksSpan) completedTasksSpan.textContent = completedCount;
+                if (totalTasksSpan) totalTasksSpan.textContent = totalTasks;
+            },
+
+            renderTask: (task, isOverdue) => {
+                const isCompleted = DataManager.state.completedTasks.includes(task.id);
+                const overdueClass = isOverdue && !isCompleted ? 'overdue-task' : '';
+                const overdueIndicator = isOverdue && !isCompleted ? '⚠️ ' : '';
+                
+                return `
+                    <div class="flex items-start ${overdueClass} p-2 rounded-lg">
+                        <input type="checkbox" 
+                               id="${task.id}" 
+                               class="task-checkbox hidden" 
+                               onchange="TaskManager.toggle('${task.id}')" 
+                               aria-describedby="${task.id}-due"
+                               ${isCompleted ? 'checked' : ''}>
+                        <label for="${task.id}" class="flex items-start cursor-pointer w-full hover:bg-stone-50 transition-colors rounded-lg p-1">
+                            <span class="checkmark h-5 w-5 border-2 border-stone-300 rounded-sm mr-3 mt-1 flex-shrink-0 relative"></span>
+                            <span class="flex-grow">
+                                <span class="task-text font-medium text-stone-700">${overdueIndicator}${task.text}</span>
+                                <span id="${task.id}-due" class="block text-xs text-stone-500 ${isOverdue && !isCompleted ? 'text-red-600 font-medium' : ''}">${task.dueDate}</span>
+                            </span>
+                        </label>
+                    </div>
+                `;
+            },
+
+            renderPhase: (phase) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                let isCurrent = false;
+                if (phase.startDate && phase.endDate) {
+                    isCurrent = Utils.isDateInRange(
+                        today.toISOString().split('T')[0], 
+                        phase.startDate, 
+                        phase.endDate
+                    );
+                }
+
+                const isComplete = TaskManager.isPhaseComplete(phase);
+                const phaseProgress = TaskManager.getPhaseProgress(phase);
+                const phaseIcon = phase.phase === 1 ? '🏁' : phase.phase === 2 ? '🛠️' : phase.phase === 3 ? '🗓️' : '🎉';
+
+                if (phase.phase === 'event') {
+                    return `
+                        <div class="bg-amber-50 border-l-4 border-amber-400 text-amber-800 p-6 rounded-r-lg shadow-sm ${isCurrent ? 'current-phase' : ''} fade-in"
+                             role="region" aria-labelledby="event-${phase.title.replace(/\s+/g, '-').toLowerCase()}">
+                            <h2 id="event-${phase.title.replace(/\s+/g, '-').toLowerCase()}" class="font-bold text-xl mb-1">${phaseIcon} ${phase.title}</h2>
+                            <p class="text-sm text-amber-700 font-medium mb-2">${phase.dates}</p>
+                            <p class="mt-2">${phase.goal}</p>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <section class="phase-card bg-white rounded-xl shadow-sm p-6 md:p-8 border border-stone-200 ${isCurrent ? 'current-phase' : ''} ${isComplete ? 'completed-phase' : ''} fade-in"
+                             role="region" aria-labelledby="phase-${phase.phase}-title">
+                        <div class="border-b border-stone-200 pb-4 mb-6">
+                            <div class="flex justify-between items-start mb-2">
+                                <h2 id="phase-${phase.phase}-title" class="text-2xl font-bold text-stone-900">${phaseIcon} Phase ${phase.phase}: ${phase.title}</h2>
+                                ${phase.tasks && phase.tasks.length > 0 ? `
+                                    <div class="text-right">
+                                        <div class="text-sm font-medium ${isComplete ? 'text-green-600' : 'text-blue-600'}">
+                                            ${phaseProgress.completed}/${phaseProgress.total} tasks
+                                        </div>
+                                        <div class="text-xs text-stone-500">${phaseProgress.percentage}% complete</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <p class="text-sm text-stone-500 font-medium mt-1">${phase.dates}</p>
+                            <p class="mt-3 text-stone-600">${phase.goal}</p>
+                        </div>
+                        
+                        ${phase.events && phase.events.length > 0 ? `
+                            <div class="space-y-4 mb-6">
+                                ${phase.events.map(event => {
+                                    if (event.type === 'note') return `<div class="bg-sky-50 border-l-4 border-sky-400 text-sky-800 p-4 rounded-r-lg"><p><span class="font-bold">🎓 NOTE:</span> ${event.text}</p></div>`;
+                                    if (event.type === 'break') return `<div class="bg-violet-50 border-l-4 border-violet-400 text-violet-800 p-4 rounded-r-lg"><p><span class="font-bold">🥂 PLANNED BREAK:</span> ${event.text}</p></div>`;
+                                    if (event.type === 'schedule') return `
+                                        <div class="bg-stone-100 p-4 rounded-lg border border-stone-200">
+                                            <h4 class="font-bold text-stone-800">${event.title}</h4>
+                                            <ul class="list-disc list-inside mt-2 space-y-1 text-stone-600" role="list">
+                                                ${event.items.map(item => `<li>${item}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${phase.tasks && phase.tasks.length > 0 ? `
+                            <div class="space-y-4">
+                                <h3 class="text-lg font-semibold">✅ Checklist:</h3>
+                                <div class="space-y-2" role="list">
+                                    ${phase.tasks.map(task => {
+                                        const isOverdue = Utils.isTaskOverdue(task.dueDate);
+                                        return UIRenderer.renderTask(task, isOverdue);
+                                    }).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${phase.reflection ? `
+                            <div class="mt-8 pt-6 border-t border-stone-200 text-center">
+                                <blockquote class="italic text-stone-600">"${phase.reflection.verse}"</blockquote>
+                                <p class="mt-2 text-sm font-semibold text-stone-700">- ${phase.reflection.reference}</p>
+                            </div>
+                        `: ''}
+                    </section>
+                `;
+            },
+
+            renderPlan: () => {
+                const container = document.getElementById('plan-container');
+                if (!container) return;
+
+                const fragment = document.createDocumentFragment();
+                const tempDiv = document.createElement('div');
+                
+                planData.forEach(phase => {
+                    tempDiv.innerHTML = UIRenderer.renderPhase(phase);
+                    while (tempDiv.firstChild) {
+                        fragment.appendChild(tempDiv.firstChild);
+                    }
+                });
+
+                container.innerHTML = '';
+                container.appendChild(fragment);
+            },
+
+            setCurrentDate: () => {
+                const dateElement = document.getElementById('current-date');
+                if (dateElement) {
+                    const today = new Date();
+                    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    dateElement.textContent = `🗓️ Today is ${today.toLocaleDateString(CONFIG.DATE_FORMAT, options)}`;
+                }
+            },
+
+            toggleDarkMode: () => {
+                DataManager.state.darkMode = !DataManager.state.darkMode;
+                const body = document.body;
+                const icon = document.getElementById('dark-mode-icon');
+                
+                if (DataManager.state.darkMode) {
+                    body.classList.add('dark');
+                    if (icon) icon.textContent = '☀️';
+                } else {
+                    body.classList.remove('dark');
+                    if (icon) icon.textContent = '🌙';
+                }
+                
+                DataManager.save();
+            }
+        };
+
+        // Event Handlers
+        const EventHandlers = {
+            init: () => {
+                // Dark mode toggle
+                const darkModeToggle = document.getElementById('dark-mode-toggle');
+                if (darkModeToggle) {
+                    darkModeToggle.addEventListener('click', UIRenderer.toggleDarkMode);
+                }
+
+                // Export button
+                const exportBtn = document.getElementById('export-btn');
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', DataManager.exportProgress);
+                }
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                    
+                    switch (e.key.toLowerCase()) {
+                        case 'd':
+                            UIRenderer.toggleDarkMode();
+                            break;
+                        case 'e':
+                            DataManager.exportProgress();
+                            break;
+                        case '?':
+                            EventHandlers.toggleShortcutsHelp();
+                            break;
+                        case 'escape':
+                            EventHandlers.hideShortcutsHelp();
+                            break;
+                    }
+                });
+            },
+
+            toggleShortcutsHelp: () => {
+                const help = document.getElementById('shortcuts-help');
+                if (help) {
+                    help.classList.toggle('hidden');
+                }
+            },
+
+            hideShortcutsHelp: () => {
+                const help = document.getElementById('shortcuts-help');
+                if (help) {
+                    help.classList.add('hidden');
+                }
+            }
+        };
+
+        // Plan Data
         const planData = [
             {
                 phase: 1,
                 title: "Preparation Sprint",
                 dates: "Today - Friday, Sept 19th, 2025",
+                startDate: "2025-09-10",
+                endDate: "2025-09-19",
                 goal: "Low-effort, high-impact preparation. Set the stage for success without adding stress during your final internship week.",
                 tasks: [
                     { id: "task1", text: "Purchase the '100 Days of Code: The Complete Python Pro Bootcamp' on Udemy.", dueDate: "By Wednesday, Sept 10th" },
@@ -104,12 +564,16 @@
                 phase: 'event',
                 title: "The Move & Settle Weekend",
                 dates: "Saturday, Sept 20th - Sunday, Sept 21st, 2025",
+                startDate: "2025-09-20",
+                endDate: "2025-09-21",
                 goal: "Move back to London and get your space set up. Your only task is to move and settle in. Unplug from this plan and focus on the logistics.",
             },
             {
                 phase: 2,
                 title: "The New Launch Weekend",
                 dates: "Saturday, Sept 27th - Sunday, Sept 28th, 2025",
+                startDate: "2025-09-27",
+                endDate: "2025-09-28",
                 goal: "Now that you're settled, this is the dedicated weekend to build your foundational environment and kickstart your learning.",
                 tasks: [
                     { id: "task8", text: "Install VirtualBox.", dueDate: "Saturday, Sept 27th" },
@@ -128,6 +592,8 @@
                 phase: 3,
                 title: "The New Routine",
                 dates: "From Monday, Sept 29th, 2025 Onwards",
+                startDate: "2025-09-29",
+                endDate: "2100-01-01",
                 goal: "Establish a consistent, sustainable weekly schedule.",
                 tasks: [],
                 events: [
@@ -142,129 +608,25 @@
             }
         ];
 
-        const appState = {
-            completedTasks: []
-        };
-
-        function saveState() {
-            localStorage.setItem('cyberPlanState', JSON.stringify(appState));
-        }
-
-        function loadState() {
-            const savedState = localStorage.getItem('cyberPlanState');
-            if (savedState) {
-                const parsedState = JSON.parse(savedState);
-                appState.completedTasks = parsedState.completedTasks || [];
-            }
-        }
-
-        function updateProgress() {
-            const totalTasks = planData.reduce((acc, phase) => acc + (phase.tasks ? phase.tasks.length : 0), 0);
-            const completedCount = appState.completedTasks.length;
-            const percentage = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
-
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-
-            progressBar.style.width = `${percentage}%`;
-            progressText.textContent = `${percentage}%`;
-        }
-
-        function handleTaskToggle(taskId) {
-            if (appState.completedTasks.includes(taskId)) {
-                appState.completedTasks = appState.completedTasks.filter(id => id !== taskId);
-            } else {
-                appState.completedTasks.push(taskId);
-            }
-            saveState();
-            updateProgress();
-        }
-
-        function renderPlan() {
-            const container = document.getElementById('plan-container');
-            container.innerHTML = ''; 
-
-            planData.forEach(phase => {
-                if (phase.phase === 'event') {
-                    const eventCard = `
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-6 rounded-r-lg">
-                            <h2 class="font-bold text-xl mb-1">${phase.title}</h2>
-                            <p class="text-sm text-yellow-700 font-medium mb-2">${phase.dates}</p>
-                            <p class="mt-2">${phase.goal}</p>
-                        </div>
-                    `;
-                    container.innerHTML += eventCard;
-                } else {
-                    const phaseCard = `
-                        <section class="bg-white rounded-xl shadow-sm p-6 md:p-8 border border-stone-200">
-                            <div class="border-b border-stone-200 pb-4 mb-6">
-                                <h2 class="text-2xl font-bold text-stone-900">Phase ${phase.phase}: ${phase.title}</h2>
-                                <p class="text-sm text-stone-500 font-medium mt-1">${phase.dates}</p>
-                                <p class="mt-3 text-stone-600">${phase.goal}</p>
-                            </div>
-                            
-                            ${phase.events && phase.events.length > 0 ? `
-                                <div class="space-y-4 mb-6">
-                                    ${phase.events.map(event => {
-                                        if (event.type === 'note') return `<div class="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-r-lg"><p><span class="font-bold">NOTE:</span> ${event.text}</p></div>`;
-                                        if (event.type === 'break') return `<div class="bg-purple-50 border-l-4 border-purple-400 text-purple-800 p-4 rounded-r-lg"><p><span class="font-bold">PLANNED BREAK:</span> ${event.text}</p></div>`;
-                                        if (event.type === 'schedule') return `
-                                            <div class="bg-stone-100 p-4 rounded-lg">
-                                                <h4 class="font-bold text-stone-800">${event.title}</h4>
-                                                <ul class="list-disc list-inside mt-2 space-y-1 text-stone-600">
-                                                    ${event.items.map(item => `<li>${item}</li>`).join('')}
-                                                </ul>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            ` : ''}
-                            
-                            ${phase.tasks && phase.tasks.length > 0 ? `
-                                <div class="space-y-4">
-                                    <h3 class="text-lg font-semibold">Checklist:</h3>
-                                    ${phase.tasks.map(task => `
-                                        <div class="flex items-start">
-                                            <input type="checkbox" id="${task.id}" class="task-checkbox hidden" onchange="handleTaskToggle('${task.id}')" ${appState.completedTasks.includes(task.id) ? 'checked' : ''}>
-                                            <label for="${task.id}" class="flex items-start cursor-pointer w-full">
-                                                <span class="checkmark h-5 w-5 border-2 border-stone-300 rounded-sm mr-3 mt-1 flex-shrink-0 relative"></span>
-                                                <span class="flex-grow">
-                                                    <span class="task-text font-medium text-stone-700">${task.text}</span>
-                                                    <span class="block text-xs text-stone-500">${task.dueDate}</span>
-                                                </span>
-                                            </label>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            ` : ''}
-
-                            ${phase.reflection ? `
-                                <div class="mt-8 pt-6 border-t border-stone-200 text-center">
-                                    <blockquote class="italic text-stone-600">"${phase.reflection.verse}"</blockquote>
-                                    <p class="mt-2 text-sm font-semibold text-stone-700">- ${phase.reflection.reference}</p>
-                                </div>
-                            `: ''}
-                        </section>
-                    `;
-                    container.innerHTML += phaseCard;
-                }
-            });
-        }
-
-        function setCurrentDate() {
-            const dateElement = document.getElementById('current-date');
-            const today = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            dateElement.textContent = `Today is ${today.toLocaleDateString('en-US', options)}`;
-        }
-
+        // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
-            setCurrentDate();
-            loadState();
-            renderPlan();
-            updateProgress();
+            DataManager.load();
+            EventHandlers.init();
+            UIRenderer.setCurrentDate();
+            
+            // Apply dark mode if saved
+            if (DataManager.state.darkMode) {
+                document.body.classList.add('dark');
+                const icon = document.getElementById('dark-mode-icon');
+                if (icon) icon.textContent = '☀️';
+            }
+            
+            UIRenderer.renderPlan();
+            UIRenderer.updateProgress();
         });
+
+        // Make TaskManager.toggle available globally for onclick handlers
+        window.TaskManager = TaskManager;
     </script>
 </body>
 </html>
-
