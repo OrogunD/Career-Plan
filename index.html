@@ -9,10 +9,10 @@
     <!-- Application Structure Plan: The application is designed as a single-page, vertical timeline dashboard. This structure was chosen because the source report (career_plan.md) is inherently a time-based plan. The user flow is simple: scroll down to see phases in chronological order. The primary interaction is checking off tasks in each phase. This immediately updates a master progress bar at the top, providing instant, motivating feedback. Collapsible sections could have hidden progress, but this open-dashboard approach makes the entire plan feel transparent and manageable. Key life events are visually distinct to acknowledge their importance and reinforce that breaks are part of the plan. This design prioritizes clarity, motivation, and ease of use. -->
     <!-- Visualization & Content Choices: 
         - Overall Progress: Report Info -> Total tasks. Goal -> Inform/Motivate. Viz/Method -> HTML/CSS Progress Bar. Interaction -> Updates on task completion. Justification -> A progress bar provides the most intuitive and immediate feedback on overall completion, which is highly motivating for a long-term plan.
-        - Plan Structure: Report Info -> Phases 1, 2, 3. Goal -> Organise. Viz/Method -> Themed cards/sections in a vertical flex layout. Interaction -> None (always visible). Justification -> An open layout (vs. accordions) lets the user see the entire scope of their journey at a glance, reducing clicks and making the plan feel more connected.
+        - Plan Structure: Report Info -> Phases 1, 2, 3. Goal -> Organize. Viz/Method -> Themed cards/sections in a vertical flex layout. Interaction -> None (always visible). Justification -> An open layout (vs. accordions) lets the user see the entire scope of their journey at a glance, reducing clicks and making the plan feel more connected.
         - Tasks: Report Info -> Checklist items. Goal -> Track progress. Viz/Method -> Interactive HTML checkboxes with labels. Interaction -> User clicks to check/uncheck, state is saved to localStorage. Justification -> This is the core interactive element. Saving progress is essential for a multi-session tool.
-        - Life Events: Report Info -> Graduation, Move, Wedding. Goal -> Contextualise/Plan. Viz/Method -> Specially styled info boxes. Interaction -> None. Justification -> Visually separating these from tasks validates their importance and makes the plan feel more realistic and humane.
-        - Motivational Text: Report Info -> Biblical verses. Goal -> Inspire. Viz/Method -> Italicised blockquotes. Interaction -> None. Justification -> A simple, respectful presentation that separates inspirational content from actionable tasks.
+        - Life Events: Report Info -> Graduation, Move, Wedding. Goal -> Contextualize/Plan. Viz/Method -> Specially styled info boxes. Interaction -> None. Justification -> Visually separating these from tasks validates their importance and makes the plan feel more realistic and humane.
+        - Motivational Text: Report Info -> Biblical verses. Goal -> Inspire. Viz/Method -> Italicized blockquotes. Interaction -> None. Justification -> A simple, respectful presentation that separates inspirational content from actionable tasks.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -55,6 +55,9 @@
         <header class="text-center mb-8 md:mb-12">
             <h1 class="text-3xl sm:text-4xl font-bold text-stone-900">My Cybersecurity Career Launch Plan</h1>
             <p class="mt-2 text-stone-600">Your interactive guide to building skills and launching your career.</p>
+            <div class="mt-4 inline-block bg-stone-200 text-stone-700 text-sm font-medium px-4 py-2 rounded-full">
+                <span id="current-date"></span>
+            </div>
         </header>
 
         <div class="bg-white rounded-xl shadow-sm p-6 mb-8 sticky top-4 z-10 border border-stone-200">
@@ -248,7 +251,15 @@
             });
         }
 
+        function setCurrentDate() {
+            const dateElement = document.getElementById('current-date');
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateElement.textContent = `Today is ${today.toLocaleDateString('en-US', options)}`;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            setCurrentDate();
             loadState();
             renderPlan();
             updateProgress();
