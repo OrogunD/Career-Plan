@@ -107,7 +107,7 @@
     </div>
 
     <script>
-        const planData = [ /* Plan data remains the same */ 
+        const planData = [ 
             {
                 phase: 1,
                 title: "Preparation Sprint",
@@ -173,7 +173,7 @@
             completedTasks: [],
             darkMode: false,
             daysOfCodeCompleted: [],
-            codeChallengeStartDate: '2025-09-22' // Set the start date here
+            codeChallengeStartDate: '2025-10-03' // UPDATED: New official start date
         };
 
         function saveState() {
@@ -187,11 +187,10 @@
                 appState.completedTasks = parsedState.completedTasks || [];
                 appState.darkMode = parsedState.darkMode || false;
                 appState.daysOfCodeCompleted = parsedState.daysOfCodeCompleted || [];
-                appState.codeChallengeStartDate = parsedState.codeChallengeStartDate || '2025-09-22';
+                appState.codeChallengeStartDate = parsedState.codeChallengeStartDate || '2025-10-03';
             }
         }
         
-        // --- All other functions (parseDueDate, isTaskOverdue, etc.) remain the same ---
         function parseDueDate(dueDateStr) {
              const matchBy = dueDateStr.match(/(\w+),?\s+(\w+)\s+(\d+)/);
              if (matchBy) {
@@ -271,18 +270,22 @@
             });
         }
         
-        // --- 100 Days of Code Functions ---
         function getCurrentDayOfChallenge() {
             const startDate = new Date(appState.codeChallengeStartDate);
             const today = new Date();
             startDate.setHours(0, 0, 0, 0);
             today.setHours(0, 0, 0, 0);
+            if (today < startDate) return 0; // Challenge hasn't started
             const diffTime = Math.abs(today - startDate);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             return diffDays + 1;
         }
 
         function toggleDayOfCode(day) {
+            const currentDay = getCurrentDayOfChallenge();
+            // Allow checking/unchecking only up to the current day
+            if (day > currentDay && currentDay > 0) return; 
+
             if (appState.daysOfCodeCompleted.includes(day)) {
                 appState.daysOfCodeCompleted = appState.daysOfCodeCompleted.filter(d => d !== day);
             } else {
@@ -307,23 +310,28 @@
                 if (isCompleted) classes += ' completed';
                 if (isCurrent) classes += ' current-day';
                 if (isMissed) classes += ' missed-day';
+                // Make future days non-clickable
+                const clickHandler = (i > currentDay && currentDay > 0) ? '' : `onclick="toggleDayOfCode(${i})"`;
 
-                gridHtml += `<div class="${classes}" onclick="toggleDayOfCode(${i})"><span>${i}</span></div>`;
+                gridHtml += `<div class="${classes}" ${clickHandler}><span>${i}</span></div>`;
             }
+            
+            let statusText = `Current Day: ${currentDay > 0 ? currentDay : 'Starts soon!'}`;
+            if(currentDay > 100) statusText = 'Challenge Complete!';
 
             container.innerHTML = `
                 <div class="flex justify-between items-center mb-4">
                      <h2 class="text-2xl font-bold text-stone-900">💻 100 Days of Code Challenge</h2>
                      <div class="text-right">
                         <p class="font-bold text-blue-600 text-lg">${completedCount} / 100 Days</p>
-                        <p class="text-sm text-stone-500">Current Day: ${currentDay}</p>
+                        <p class="text-sm text-stone-500">${statusText}</p>
                      </div>
                 </div>
                 <div class="day-grid">${gridHtml}</div>
                 <div class="mt-4 text-xs text-stone-500 text-center">
-                    <span class="inline-block w-3 h-3 bg-green-500 rounded-sm mr-1"></span> Completed
-                    <span class="inline-block w-3 h-3 border-2 border-blue-600 rounded-sm mr-1 ml-4"></span> Today
-                    <span class="inline-block w-3 h-3 bg-red-300 rounded-sm mr-1 ml-4"></span> Missed
+                    <span class="inline-block w-3 h-3 bg-green-500 rounded-sm mr-1 align-middle"></span> Completed
+                    <span class="inline-block w-3 h-3 border-2 border-blue-600 rounded-sm mr-1 ml-4 align-middle"></span> Today
+                    <span class="inline-block w-3 h-3 bg-red-300 rounded-sm mr-1 ml-4 align-middle"></span> Missed
                 </div>
             `;
         }
